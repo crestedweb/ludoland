@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Naija Ludo 3D</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap");
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(
+          circle at center,
+          #1a2a6c,
+          #b21f1f,
+          #fdbb2d
+        );
+        font-family: "Poppins", sans-serif;
+        color: white;
+      }
+      #ui-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 15px 40px;
+        color: white;
+        margin: 10px;
+        cursor: pointer;
+        border-radius: 30px;
+        font-weight: bold;
+        backdrop-filter: blur(5px);
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <div id="ui-layer">
+      <div id="screen-welcome" class="screen">
+        <h1>NAIJA LUDO 3D</h1>
+        <button
+          class="btn"
+          onclick="document.getElementById('screen-welcome').classList.add('hidden')"
+        >
+          ENTER GAME
+        </button>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+      // BASIC SETUP ONLY
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+      );
+      camera.position.set(0, 20, 15);
+      camera.lookAt(0, 0, 0);
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document
+        .getElementById("game-container")
+        .appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      const amb = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(amb);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+      dir.position.set(10, 20, 10);
+      scene.add(dir);
+
+      // BOARD TEXTURE GENERATION
+      function createBoardTex() {
+        const c = document.createElement("canvas");
+        c.width = 1024;
+        c.height = 1024;
+        const ctx = c.getContext("2d");
+        const s = 1024 / 15;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, 1024, 1024);
+        const base = (x, y, col) => {
+          ctx.fillStyle = col;
+          ctx.fillRect(x * s, y * s, 6 * s, 6 * s);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect((x + 1) * s, (y + 1) * s, 4 * s, 4 * s);
+        };
+        base(0, 0, "#d32f2f");
+        base(9, 0, "#388e3c");
+        base(9, 9, "#fbc02d");
+        base(0, 9, "#1976d2");
+        ctx.strokeStyle = "#888";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 15; i++)
+          for (let j = 0; j < 15; j++) {
+            if (
+              !(
+                (i < 6 && j < 6) ||
+                (i > 8 && j < 6) ||
+                (i > 8 && j > 8) ||
+                (i < 6 && j > 8)
+              )
+            )
+              ctx.strokeRect(i * s, j * s, s, s);
+          }
+        return new THREE.CanvasTexture(c);
+      }
+
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(15, 0.5, 15),
+        new THREE.MeshStandardMaterial({ map: createBoardTex() })
+      );
+      board.position.y = -0.25;
+      scene.add(board);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      animate();
+    </script>
+  </body>
+</html>
