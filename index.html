@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-      // ... (Scene Setup from Phase 2) ...
+      // ... Init Scene, Board, Path (As before) ...
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x222222);
       const camera = new THREE.PerspectiveCamera(
@@ -35,67 +35,68 @@
       dir.position.set(10, 20, 10);
       scene.add(dir);
 
-      // ... (Board Texture from Phase 2) ...
-      function createBoardTexture() {
-        /* Same as Phase 2 */
-        const canvas = document.createElement("canvas");
-        canvas.width = 1024;
-        canvas.height = 1024;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, 1024, 1024);
-        return new THREE.CanvasTexture(canvas); // Simplified for brevity in commit, assume texture logic is here
-      }
+      // Dummy Board for visual context
       const board = new THREE.Mesh(
         new THREE.BoxGeometry(15, 0.5, 15),
-        new THREE.MeshStandardMaterial({ map: createBoardTexture() })
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
       board.position.y = -0.25;
       scene.add(board);
 
-      // PHASE 3: Logic Implementation
       const COLORS = {
         red: 0xd32f2f,
         green: 0x388e3c,
         yellow: 0xfbc02d,
         blue: 0x1976d2,
       };
-
       const PLAYERS = [
-        { id: 0, name: "Red", color: COLORS.red, startIdx: 0, pieces: [] },
-        { id: 1, name: "Green", color: COLORS.green, startIdx: 13, pieces: [] },
-        {
-          id: 2,
-          name: "Yellow",
-          color: COLORS.yellow,
-          startIdx: 26,
-          pieces: [],
-        },
-        { id: 3, name: "Blue", color: COLORS.blue, startIdx: 39, pieces: [] },
+        { id: 0, color: COLORS.red },
+        { id: 1, color: COLORS.green },
+        { id: 2, color: COLORS.yellow },
+        { id: 3, color: COLORS.blue },
       ];
 
-      let logicPath = [];
+      // PHASE 4: Create Assets
+      function createPieces() {
+        const g2w = (v) => v - 7;
+        const corners = [
+          { x: 1, y: 1 },
+          { x: 10, y: 1 },
+          { x: 10, y: 10 },
+          { x: 1, y: 10 },
+        ];
 
-      function initPath() {
-        const p = [];
-        // Hardcoded loop of the board steps
-        for (let x = 1; x <= 5; x++) p.push({ x: x, y: 6 });
-        for (let y = 5; y >= 0; y--) p.push({ x: 6, y: y });
-        p.push({ x: 7, y: 0 });
-        for (let y = 0; y <= 5; y++) p.push({ x: 8, y: y });
-        for (let x = 9; x <= 14; x++) p.push({ x: x, y: 6 });
-        p.push({ x: 14, y: 7 });
-        for (let x = 14; x >= 9; x--) p.push({ x: x, y: 8 });
-        for (let y = 9; y <= 14; y++) p.push({ x: 8, y: y });
-        p.push({ x: 7, y: 14 });
-        for (let y = 14; y >= 9; y--) p.push({ x: 6, y: y });
-        for (let x = 5; x >= 0; x--) p.push({ x: x, y: 8 });
-        p.push({ x: 0, y: 7 });
-        logicPath = p;
-        console.log("Path Initialized:", logicPath.length, "steps");
+        PLAYERS.forEach((p) => {
+          const corner = corners[p.id];
+          p.pieces = [];
+          for (let i = 0; i < 4; i++) {
+            const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.1, 32);
+            const mat = new THREE.MeshStandardMaterial({ color: p.color });
+            const mesh = new THREE.Mesh(geo, mat);
+
+            const offsetX = (i % 2) * 2;
+            const offsetY = Math.floor(i / 2) * 2;
+            const homeX = g2w(corner.x + offsetX + 0.5);
+            const homeZ = g2w(corner.y + offsetY + 0.5);
+
+            mesh.position.set(homeX, 0.1, homeZ);
+            scene.add(mesh);
+            p.pieces.push(mesh);
+          }
+        });
       }
 
-      initPath();
+      function initDice() {
+        const size = 1.2;
+        const geo = new THREE.BoxGeometry(size, size, size);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const diceMesh = new THREE.Mesh(geo, mat);
+        diceMesh.position.set(0, 3, 0);
+        scene.add(diceMesh);
+      }
+
+      createPieces();
+      initDice();
 
       function animate() {
         requestAnimationFrame(animate);
