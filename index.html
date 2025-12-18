@@ -2,22 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Naija Ludo 3D</title>
+    <title>Naija Ludo 3D - Alpha</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
         background: #1a1a1a;
+        font-family: sans-serif;
+        color: white;
+      }
+      #ui {
+        position: absolute;
+        bottom: 30px;
+        width: 100%;
+        text-align: center;
+      }
+      button {
+        padding: 15px 30px;
+        font-size: 20px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
+    <div id="game-container"></div>
+    <div id="ui">
+      <h2 id="status">Red's Turn</h2>
+      <button onclick="rollDice()">ROLL DICE</button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-      // ... Init Scene, Board, Path (As before) ...
+      // ... Init Scene etc ...
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x222222);
       const camera = new THREE.PerspectiveCamera(
         45,
         window.innerWidth / window.innerHeight,
@@ -30,73 +48,48 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
       new THREE.OrbitControls(camera, renderer.domElement);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-      dir.position.set(10, 20, 10);
-      scene.add(dir);
-
-      // Dummy Board for visual context
+      scene.add(new THREE.AmbientLight(0xffffff, 0.8));
       const board = new THREE.Mesh(
         new THREE.BoxGeometry(15, 0.5, 15),
         new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
-      board.position.y = -0.25;
       scene.add(board);
 
-      const COLORS = {
-        red: 0xd32f2f,
-        green: 0x388e3c,
-        yellow: 0xfbc02d,
-        blue: 0x1976d2,
-      };
       const PLAYERS = [
-        { id: 0, color: COLORS.red },
-        { id: 1, color: COLORS.green },
-        { id: 2, color: COLORS.yellow },
-        { id: 3, color: COLORS.blue },
+        { id: 0, name: "Red", pieces: [] },
+        { id: 1, name: "Green", pieces: [] },
       ];
+      let turn = 0;
 
-      // PHASE 4: Create Assets
-      function createPieces() {
-        const g2w = (v) => v - 7;
-        const corners = [
-          { x: 1, y: 1 },
-          { x: 10, y: 1 },
-          { x: 10, y: 10 },
-          { x: 1, y: 10 },
-        ];
+      // Simple pieces
+      PLAYERS.forEach((p, i) => {
+        const mesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.3, 0.1),
+          new THREE.MeshStandardMaterial({
+            color: i === 0 ? 0xff0000 : 0x00ff00,
+          })
+        );
+        mesh.position.set(i * 5 - 2.5, 0.5, 0);
+        scene.add(mesh);
+        p.pieces.push({ mesh: mesh, step: 0 });
+      });
 
-        PLAYERS.forEach((p) => {
-          const corner = corners[p.id];
-          p.pieces = [];
-          for (let i = 0; i < 4; i++) {
-            const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.1, 32);
-            const mat = new THREE.MeshStandardMaterial({ color: p.color });
-            const mesh = new THREE.Mesh(geo, mat);
+      // PHASE 5: Basic Game Loop
+      function rollDice() {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        console.log("Rolled: " + roll);
 
-            const offsetX = (i % 2) * 2;
-            const offsetY = Math.floor(i / 2) * 2;
-            const homeX = g2w(corner.x + offsetX + 0.5);
-            const homeZ = g2w(corner.y + offsetY + 0.5);
+        // Basic move logic for demo
+        const p = PLAYERS[turn];
+        p.pieces[0].step += roll;
 
-            mesh.position.set(homeX, 0.1, homeZ);
-            scene.add(mesh);
-            p.pieces.push(mesh);
-          }
-        });
+        // Dummy visual update
+        p.pieces[0].mesh.position.x += (turn === 0 ? 1 : -1) * 0.5;
+
+        turn = (turn + 1) % 2;
+        document.getElementById("status").innerText =
+          PLAYERS[turn].name + "'s Turn";
       }
-
-      function initDice() {
-        const size = 1.2;
-        const geo = new THREE.BoxGeometry(size, size, size);
-        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-        const diceMesh = new THREE.Mesh(geo, mat);
-        diceMesh.position.set(0, 3, 0);
-        scene.add(diceMesh);
-      }
-
-      createPieces();
-      initDice();
 
       function animate() {
         requestAnimationFrame(animate);
